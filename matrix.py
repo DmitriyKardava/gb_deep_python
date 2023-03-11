@@ -38,15 +38,6 @@ class Matrix:
                 result.matrix[i][j] = other.matrix[i][j] - self.matrix[i][j]
         return result
 
-    def __mul__(self, other):
-        if not self._is_equal(other):
-            raise ValueError
-        result = Matrix(len(self.matrix), len(self.matrix[0]))
-        for i in range(len(self.matrix)):
-            for j in range(len(self.matrix[0])):
-                result.matrix[i][j] = other.matrix[i][j] * self.matrix[i][j]
-        return result
-
     def __eq__(self, other):
         return True if self.matrix == other.matrix else False
 
