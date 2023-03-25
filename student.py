@@ -144,6 +144,14 @@ class Student:
     def avg_test(self):
         return self._average(self.tests)
 
+    def overall_avg_score(self):
+        summ = 0
+        count = 0
+        for k, v in self.marks.items():
+            summ += sum(v)
+            count += len(v)
+        return summ/count
+
 
 if __name__ == '__main__':
     student = Student('Иванов', 'Иван', 'Иванович')
@@ -156,3 +164,4 @@ if __name__ == '__main__':
     print(student)
     print(f"Средний балл по предметам: {student.avg_mark()}")
     print(f"Средний балл по тестам: {student.avg_test()}")
+    print(f"Средний балл по всем предметам: {student.overall_avg_score():.2f}")
