@@ -130,12 +130,29 @@ class Student:
     def set_test(self, subject, test):
         self.tests = (subject, test)
 
+    @staticmethod
+    def _average(data):
+        result = {}
+        for k, v in data.items():
+            avg = sum(v)/len(v)
+            result[k] = avg
+        return result
+
+    def avg_mark(self):
+        return self._average(self.marks)
+
+    def avg_test(self):
+        return self._average(self.tests)
+
 
 if __name__ == '__main__':
     student = Student('Иванов', 'Иван', 'Иванович')
     student.set_mark('русский язык', 4)
     student.set_mark('русский язык', 5)
+    student.set_mark('физика', 5)
     student.set_test('английский язык', 99)
-    student.set_mark('python', 10)
+    # student.set_mark('python', 10)
 
     print(student)
+    print(f"Средний балл по предметам: {student.avg_mark()}")
+    print(f"Средний балл по тестам: {student.avg_test()}")
