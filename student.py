@@ -37,8 +37,22 @@ class FIODescriptor:
         setattr(instance, self.param_name, value)
 
 
+class SubjectDescriptor:
+    def __set_name__(self, owner, name):
+        self.param_name = f"_{name}"
+
+    def __get__(self, instance, owner):
+        return getattr(instance, self.param_name)
+
+    def __set__(self, instance, value):
+        if value[1] not in value[0]:
+            raise ValueError(f"{value[1]} не в списке предметов")
+        setattr(instance, self.param_name, value)
+
+
 class MarkDescriptor:
     mark = Range(2, 5)
+    subject = SubjectDescriptor()
 
     def __set_name__(self, owner, name):
         self.param_name = f"_{name}"
@@ -49,9 +63,8 @@ class MarkDescriptor:
     def __set__(self, instance, value):
         marks = {}
         if value:
+            self.subject = instance.subjects, value[0]
             self.mark = value[1]
-            if value[0] not in instance.subjects:
-                raise ValueError(f"{value[0]} не в списке предметов")
             marks = instance.marks
             if marks.get(value[0]):
                 marks[value[0]].append(self.mark)
@@ -62,6 +75,7 @@ class MarkDescriptor:
 
 class TestDescriptor:
     test = Range(0, 100)
+    subject = SubjectDescriptor()
 
     def __set_name__(self, owner, name):
         self.param_name = f"_{name}"
@@ -73,8 +87,7 @@ class TestDescriptor:
         tests = {}
         if value:
             self.test = value[1]
-            if value[0] not in instance.subjects:
-                raise ValueError(f"{value[0]} не в списке предметов")
+            self.subject = instance.subjects, value[0]
             tests = instance.tests
             if tests.get(value[0]):
                 tests[value[0]].append(self.test)
@@ -123,5 +136,6 @@ if __name__ == '__main__':
     student.set_mark('русский язык', 4)
     student.set_mark('русский язык', 5)
     student.set_test('английский язык', 99)
+    student.set_mark('python', 10)
 
     print(student)
