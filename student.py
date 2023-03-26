@@ -60,6 +60,13 @@ class MarkDescriptor:
     mark = Range(2, 5)
     subject = SubjectDescriptor()
 
+    @staticmethod
+    def _set_mark(subject, marks, mark):
+        if marks.get(subject):
+            marks[subject].append(mark)
+        else:
+            marks[subject] = [mark]
+
     def __init__(self, mark=None, subject=None):
         self.mark = mark
         self.subject = subject
@@ -71,26 +78,22 @@ class MarkDescriptor:
         return getattr(instance, self.param_name)
 
     def __set__(self, instance, value):
-        marks = {}
         if value:
-            print(value)
             self.subject = instance.subjects, value['subject']
             self.mark = value['mark']
-            marks = instance.marks
-            if marks.get(value['subject']):
-                marks[value['subject']].append(self.mark)
-            else:
-                marks[value['subject']] = [self.mark]
-        setattr(instance, self.param_name, marks)
+            self._set_mark(value['subject'], instance.marks, self.mark)
+        else:
+            setattr(instance, self.param_name, {})
 
 
-class TestDescriptor:
+class TestDescriptor(MarkDescriptor):
     test = Range(0, 100)
     subject = SubjectDescriptor()
-    
+
     def __init__(self, test=None, subject=None):
         self.test = test
         self.subject = subject
+        super(TestDescriptor, self).__init__()
 
     def __get__(self, instance, owner):
         return getattr(instance, self.param_name)
@@ -99,17 +102,12 @@ class TestDescriptor:
         self.param_name = f"_{name}"
 
     def __set__(self, instance, value):
-        tests = {}
         if value:
-            print(value)
             self.subject = instance.subjects, value['subject']
             self.test = value['mark']
-            tests = instance.tests
-            if tests.get(value['subject']):
-                tests[value['subject']].append(self.test)
-            else:
-                tests[value['subject']] = [self.test]
-        setattr(instance, self.param_name, tests)
+            self._set_mark(value['subject'], instance.tests, value['mark'])
+        else:
+            setattr(instance, self.param_name, {})
 
 
 class Student:
@@ -136,8 +134,6 @@ class Student:
     def __str__(self):
         return f"Студент: {self.last_name} {self.name} {self.patronymic}\n" \
                f"Предметы: {self.subjects}\n" \
-               f"{self.marks=}\n"\
-               f"{self.tests=}\n"\
                f"Средний балл по тестам: {student.avg_test()}\n" \
                f"Средний балл по предметам: {student.overall_avg_score():.2f}"
 
@@ -152,7 +148,7 @@ class Student:
         result = {}
         for k, v in data.items():
             try:
-                avg = sum(v)/len(v)
+                avg = sum(v) / len(v)
             except ZeroDivisionError:
                 avg = 0
             result[k] = avg
@@ -171,17 +167,17 @@ class Student:
             summ += sum(v)
             count += len(v)
         try:
-            return summ/count
+            return summ / count
         except ZeroDivisionError:
             return 0
 
 
 if __name__ == '__main__':
     student = Student('Иванов', 'Иван', 'Иванович')
-    # student.set_mark('русский язык', 4)
-    # student.set_mark('русский язык', 5)
-    # student.set_mark('физика', 5)
-    # student.set_test('английский язык', 99)
+    student.set_mark('русский язык', 5)
+    student.set_mark('русский язык', 5)
+    student.set_mark('физика', 5)
+    student.set_test('английский язык', 99)
     # student.set_mark('python', 10)
-    #
+
     print(student)
