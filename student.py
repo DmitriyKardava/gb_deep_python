@@ -86,7 +86,8 @@ class MarkDescriptor:
 
 class TestDescriptor:
     test = Range(0, 100)
-
+    subject = SubjectDescriptor()
+    
     def __init__(self, test=None, subject=None):
         self.test = test
         self.subject = subject
