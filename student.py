@@ -67,10 +67,6 @@ class MarkDescriptor:
         else:
             marks[subject] = [mark]
 
-    def __init__(self, mark=None, subject=None):
-        self.mark = mark
-        self.subject = subject
-
     def __set_name__(self, owner, name):
         self.param_name = f"_{name}"
 
@@ -88,18 +84,6 @@ class MarkDescriptor:
 
 class TestDescriptor(MarkDescriptor):
     test = Range(0, 100)
-    subject = SubjectDescriptor()
-
-    def __init__(self, test=None, subject=None):
-        self.test = test
-        self.subject = subject
-        super(TestDescriptor, self).__init__()
-
-    def __get__(self, instance, owner):
-        return getattr(instance, self.param_name)
-
-    def __set_name__(self, owner, name):
-        self.param_name = f"_{name}"
 
     def __set__(self, instance, value):
         if value:
@@ -134,8 +118,9 @@ class Student:
     def __str__(self):
         return f"Студент: {self.last_name} {self.name} {self.patronymic}\n" \
                f"Предметы: {self.subjects}\n" \
-               f"Средний балл по тестам: {student.avg_test()}\n" \
-               f"Средний балл по предметам: {student.overall_avg_score():.2f}"
+               f"Средний балл по тестам: {self.avg_test()}\n" \
+               f"Средний балл по предметам: {self.overall_avg_score():.2f}"\
+
 
     def set_mark(self, subject, mark):
         self.marks = {'subject': subject, 'mark': mark}
@@ -178,6 +163,6 @@ if __name__ == '__main__':
     student.set_mark('русский язык', 5)
     student.set_mark('физика', 5)
     student.set_test('английский язык', 99)
-    # student.set_mark('python', 10)
+    # student.set_test('python', 110)
 
     print(student)
