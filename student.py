@@ -1,4 +1,5 @@
 import csv
+from errors import RangeError, NotIntError, NotAlphaError, NotTitleError, WrongSubjectError
 
 
 class Range:
@@ -13,13 +14,14 @@ class Range:
         return getattr(instance, self.param_name)
 
     def __set__(self, instance, value):
-        if not isinstance(value, int):
-            raise ValueError(f"Значение {value} должно быть целым числом")
-        if self.min_val is not None and value < self.min_val:
-            raise ValueError(f"Значение {value} должно быть больше или равно {self.min_val}")
-        if self.max_val is not None and value > self.max_val:
-            raise ValueError(f"Значение {value} должно быть меньше или равно {self.max_val}")
-        setattr(instance, self.param_name, value)
+        if value:
+            if not isinstance(value, int):
+                raise NotIntError(value)
+            if self.min_val is not None and value < self.min_val:
+                raise RangeError(value, self.min_val, self.max_val)
+            if self.max_val is not None and value > self.max_val:
+                raise RangeError(value, self.min_val, self.max_val)
+            setattr(instance, self.param_name, value)
 
 
 class FIODescriptor:
@@ -31,13 +33,16 @@ class FIODescriptor:
 
     def __set__(self, instance, value):
         if not value.isalpha():
-            raise ValueError('В ФИО допускаются только буквы')
+            raise NotAlphaError(value)
         if not value.istitle():
-            raise ValueError('ФИО должны начинаться с заглавной буквы')
+            raise NotTitleError(value)
         setattr(instance, self.param_name, value)
 
 
 class SubjectDescriptor:
+    def __init__(self):
+        self.subjects = {}
+
     def __set_name__(self, owner, name):
         self.param_name = f"_{name}"
 
@@ -45,14 +50,19 @@ class SubjectDescriptor:
         return getattr(instance, self.param_name)
 
     def __set__(self, instance, value):
-        if value[1] not in value[0]:
-            raise ValueError(f"{value[1]} не в списке предметов")
-        setattr(instance, self.param_name, value)
+        if value:
+            if value[1] not in value[0]:
+                raise WrongSubjectError(value[1])
+            setattr(instance, self.param_name, value)
 
 
 class MarkDescriptor:
     mark = Range(2, 5)
     subject = SubjectDescriptor()
+
+    def __init__(self, mark=None, subject=None):
+        self.mark = mark
+        self.subject = subject
 
     def __set_name__(self, owner, name):
         self.param_name = f"_{name}"
@@ -63,36 +73,41 @@ class MarkDescriptor:
     def __set__(self, instance, value):
         marks = {}
         if value:
-            self.subject = instance.subjects, value[0]
-            self.mark = value[1]
+            print(value)
+            self.subject = instance.subjects, value['subject']
+            self.mark = value['mark']
             marks = instance.marks
-            if marks.get(value[0]):
-                marks[value[0]].append(self.mark)
+            if marks.get(value['subject']):
+                marks[value['subject']].append(self.mark)
             else:
-                marks[value[0]] = [self.mark]
+                marks[value['subject']] = [self.mark]
         setattr(instance, self.param_name, marks)
 
 
 class TestDescriptor:
     test = Range(0, 100)
-    subject = SubjectDescriptor()
 
-    def __set_name__(self, owner, name):
-        self.param_name = f"_{name}"
+    def __init__(self, test=None, subject=None):
+        self.test = test
+        self.subject = subject
 
     def __get__(self, instance, owner):
         return getattr(instance, self.param_name)
 
+    def __set_name__(self, owner, name):
+        self.param_name = f"_{name}"
+
     def __set__(self, instance, value):
         tests = {}
         if value:
-            self.test = value[1]
-            self.subject = instance.subjects, value[0]
+            print(value)
+            self.subject = instance.subjects, value['subject']
+            self.test = value['mark']
             tests = instance.tests
-            if tests.get(value[0]):
-                tests[value[0]].append(self.test)
+            if tests.get(value['subject']):
+                tests[value['subject']].append(self.test)
             else:
-                tests[value[0]] = [self.test]
+                tests[value['subject']] = [self.test]
         setattr(instance, self.param_name, tests)
 
 
@@ -118,23 +133,27 @@ class Student:
         self.tests = {}
 
     def __str__(self):
-        return f"Студент:\n" \
-               f"ФИО: {self.last_name} {self.name} {self.patronymic}\n" \
+        return f"Студент: {self.last_name} {self.name} {self.patronymic}\n" \
                f"Предметы: {self.subjects}\n" \
-               f"Оценки: {self.marks}\n" \
-               f"Тесты: {self.tests}"
+               f"{self.marks=}\n"\
+               f"{self.tests=}\n"\
+               f"Средний балл по тестам: {student.avg_test()}\n" \
+               f"Средний балл по предметам: {student.overall_avg_score():.2f}"
 
     def set_mark(self, subject, mark):
-        self.marks = (subject, mark)
+        self.marks = {'subject': subject, 'mark': mark}
 
-    def set_test(self, subject, test):
-        self.tests = (subject, test)
+    def set_test(self, subject, mark):
+        self.tests = {'subject': subject, 'mark': mark}
 
     @staticmethod
     def _average(data):
         result = {}
         for k, v in data.items():
-            avg = sum(v)/len(v)
+            try:
+                avg = sum(v)/len(v)
+            except ZeroDivisionError:
+                avg = 0
             result[k] = avg
         return result
 
@@ -150,18 +169,18 @@ class Student:
         for k, v in self.marks.items():
             summ += sum(v)
             count += len(v)
-        return summ/count
+        try:
+            return summ/count
+        except ZeroDivisionError:
+            return 0
 
 
 if __name__ == '__main__':
     student = Student('Иванов', 'Иван', 'Иванович')
-    student.set_mark('русский язык', 4)
-    student.set_mark('русский язык', 5)
-    student.set_mark('физика', 5)
-    student.set_test('английский язык', 99)
+    # student.set_mark('русский язык', 4)
+    # student.set_mark('русский язык', 5)
+    # student.set_mark('физика', 5)
+    # student.set_test('английский язык', 99)
     # student.set_mark('python', 10)
-
+    #
     print(student)
-    print(f"Средний балл по предметам: {student.avg_mark()}")
-    print(f"Средний балл по тестам: {student.avg_test()}")
-    print(f"Средний балл по всем предметам: {student.overall_avg_score():.2f}")
