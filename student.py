@@ -2,16 +2,22 @@ import csv
 from errors import RangeError, NotIntError, NotAlphaError, NotTitleError, WrongSubjectError
 
 
-class Range:
-    def __init__(self, min_val=None, max_val=None):
-        self.min_val = min_val
-        self.max_val = max_val
+class BaseDescriptor:
+    def __init__(self):
+        pass
 
     def __set_name__(self, owner, name):
         self.param_name = f"_{name}"
 
     def __get__(self, instance, owner):
         return getattr(instance, self.param_name)
+
+
+class Range(BaseDescriptor):
+    def __init__(self, min_val=None, max_val=None):
+        super().__init__()
+        self.min_val = min_val
+        self.max_val = max_val
 
     def __set__(self, instance, value):
         if value:
@@ -24,13 +30,7 @@ class Range:
             setattr(instance, self.param_name, value)
 
 
-class FIODescriptor:
-    def __set_name__(self, owner, name):
-        self.param_name = f"_{name}"
-
-    def __get__(self, instance, owner):
-        return getattr(instance, self.param_name)
-
+class FIODescriptor(BaseDescriptor):
     def __set__(self, instance, value):
         if not value.isalpha():
             raise NotAlphaError(value)
@@ -39,16 +39,7 @@ class FIODescriptor:
         setattr(instance, self.param_name, value)
 
 
-class SubjectDescriptor:
-    def __init__(self):
-        self.subjects = {}
-
-    def __set_name__(self, owner, name):
-        self.param_name = f"_{name}"
-
-    def __get__(self, instance, owner):
-        return getattr(instance, self.param_name)
-
+class SubjectDescriptor(BaseDescriptor):
     def __set__(self, instance, value):
         if value:
             if value[1] not in value[0]:
@@ -56,7 +47,7 @@ class SubjectDescriptor:
             setattr(instance, self.param_name, value)
 
 
-class MarkDescriptor:
+class MarkDescriptor(BaseDescriptor):
     mark = Range(2, 5)
     subject = SubjectDescriptor()
 
@@ -66,12 +57,6 @@ class MarkDescriptor:
             marks[subject].append(mark)
         else:
             marks[subject] = [mark]
-
-    def __set_name__(self, owner, name):
-        self.param_name = f"_{name}"
-
-    def __get__(self, instance, owner):
-        return getattr(instance, self.param_name)
 
     def __set__(self, instance, value):
         if value:
@@ -83,12 +68,12 @@ class MarkDescriptor:
 
 
 class TestDescriptor(MarkDescriptor):
-    test = Range(0, 100)
+    mark = Range(0, 100)
 
     def __set__(self, instance, value):
         if value:
             self.subject = instance.subjects, value['subject']
-            self.test = value['mark']
+            self.mark = value['mark']
             self._set_mark(value['subject'], instance.tests, value['mark'])
         else:
             setattr(instance, self.param_name, {})
