@@ -24,10 +24,10 @@ def dir2dict(work_dir: Path) -> dict:
     for file in all_files:
         if file.is_dir():
             f_type = 'directory'
-            size = sum(file.stat(follow_symlinks=False).st_size for _ in file.rglob('*'))
+            size = sum(file.stat().st_size for _ in file.rglob('*'))
         elif file.is_file():
             f_type = 'file'
-            size = file.stat(follow_symlinks=False).st_size
+            size = file.stat().st_size
         else:
             f_type = ''
             size = 0
@@ -80,7 +80,7 @@ if __name__ == "__main__":
         log.logger.error(f"Неизвестный формат файла {args.file_format}")
     if func:
         try:
-            log.logger.info(f"Запись в файл {args.file_name}")
+            log.logger.info(f"Запись в файл {file_name}")
             save_file(func, file_name, w_dir)
         except Exception as err:
             log.logging.exception(err)
