@@ -1,0 +1,10 @@
+>>> from datecheck_doctest import check_date
+>>> check_date("00.00.0000")
+False
+>>> check_date("01.01.0001")
+True
+>>> check_date("31.12.9999")
+True
+>>> check_date("29.02.2001")
+False
+
